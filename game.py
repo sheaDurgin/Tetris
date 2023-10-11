@@ -34,7 +34,9 @@ offsets = {
 }
 
 class Game:
-    def __init__(self):
+    def __init__(self, high_score):
+        self.high_score = high_score
+
         pygame.init()
         self.board = Board(self.select_level())
         self.screen = pygame.display.set_mode((screen_width, screen_height))
@@ -70,6 +72,7 @@ class Game:
     def run(self):
         self.draw_board()
         self.draw_border()
+        self.display_high_score()
 
         # Get the elapsed time in seconds since the last frame
         dt = self.clock.tick(60) / 1000
@@ -186,6 +189,25 @@ class Game:
 
         # Draw the border rectangle
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
+    
+    def display_high_score(self):
+        font = pygame.font.Font(None, 36)
+        high_score_text = f"High Score"
+        high_score_value_text = f"{self.high_score}"
+        
+        text_surface = font.render(high_score_text, True, (255, 255, 255))
+        value_surface = font.render(high_score_value_text, True, (255, 255, 255))
+
+        text_rect = text_surface.get_rect()
+        value_rect = value_surface.get_rect()
+
+        # Position the text and value surfaces
+        text_rect.center = (screen_width // 1.15, 200)
+        value_rect.center = (screen_width // 1.15, 235)
+
+        # Draw the text and value surfaces
+        self.screen.blit(text_surface, text_rect)
+        self.screen.blit(value_surface, value_rect)
 
     def display_score(self):
         font = pygame.font.Font(None, 36)

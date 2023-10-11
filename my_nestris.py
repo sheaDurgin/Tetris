@@ -2,14 +2,14 @@ from game import Game
 import os
 
 def main():
-    game = Game()
+    # Read scores from scores.txt and keep them sorted in descending order
+    scores = read_scores()
+    scores.sort(reverse=True)
+    game = Game(scores[0])
     while True:
         game_on, score = game.run()
         if not game_on:
             break
-    
-    # Read scores from scores.txt and keep them sorted in descending order
-    scores = read_scores()
 
     # Add the new score to the list
     scores.append(score)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Create "scores.txt" if it doesn't exist
     if not os.path.exists("scores.txt"):
         with open("scores.txt", "w") as file:
-            file.write("")
+            file.write("0")
 
     while True:
         main()
