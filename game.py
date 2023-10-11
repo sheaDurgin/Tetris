@@ -52,6 +52,7 @@ class Game:
         self.top_left_y = screen_height - (TOTAL_ROWS * cell_size)
 
         self.running = True
+        self.pause = False
 
         self.can_move_left = False
         self.can_move_right = False
@@ -180,6 +181,9 @@ class Game:
                 elif event.key == pygame.K_z:
                     self.curr_piece.rotate(COUNTER_CLOCKWISE, self.board)
 
+                if event.key == pygame.K_SPACE:
+                    self.pause = True
+
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_k:
                     self.speedup = False
@@ -188,10 +192,16 @@ class Game:
                     self.is_j_pressed = False
                 elif event.key == pygame.K_l:
                     self.is_l_pressed = False
+
                 # Reset the counters when either "J" or "L" key is released
                 if not self.is_j_pressed and not self.is_l_pressed:
                     self.current_shift_delay = 0
                     self.current_shift_interval = 0
+
+        while self.pause:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    self.pause = False
 
     def check_loss(self):
         for idx, block in enumerate(self.curr_piece.orientation):
