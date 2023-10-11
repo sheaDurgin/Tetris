@@ -1,0 +1,43 @@
+level_delay = {
+    0: 10, 1: 20, 2: 30, 3: 40, 4: 50, 5: 60, 6: 70, 7: 80, 8: 90,
+    9: 100, 10: 100, 11: 100, 12: 100, 13: 100, 14: 100, 15: 100,
+    16: 110, 17: 120, 18: 130, 19: 140, 20: 150, 21: 160, 22: 170, 23: 180, 24: 190,
+    25: 200, 26: 200, 27: 200, 28: 200, 29: 200
+}
+
+TOTAL_ROWS = 20
+TOTAL_COLS = 10
+
+class Board:
+    def __init__(self, level):
+        self.blocks = {(col, row): (0, 0, 0) for col in range(10) for row in range(20)}
+        self.score = 0
+        self.level = level
+        self.lines_cleared = 0
+        self.lines_until_level_change = level_delay[self.level]
+        
+    def clear_lines(self):
+        rows_cleared = [False for _ in range(TOTAL_ROWS)]
+        for row in range(TOTAL_ROWS):
+            clear = True
+            for col in range(TOTAL_COLS):
+                if self.blocks[(col, row)] == (0, 0, 0):
+                    clear = False
+                    break
+
+            rows_cleared[row] = clear
+        
+        # Move lines down
+        offset = 0
+        for row in range(TOTAL_ROWS):
+            if rows_cleared[row]:
+                offset += 1
+                continue
+            elif offset == 0:
+                continue
+
+            for col in range(TOTAL_COLS):
+                self.blocks[(col, row - offset)] = self.blocks[(col, row)]
+                self.blocks[(col, row)] = (0, 0, 0)
+        
+        return offset

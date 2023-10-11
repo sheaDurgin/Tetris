@@ -1,9 +1,6 @@
-import random
-import copy
 import pygame
-
-START_COL = 5
-START_ROW = 19
+from board import Board
+from piece import Piece
 
 # 0 -> 9
 TOTAL_COLS = 10
@@ -15,147 +12,18 @@ RIGHT = 1
 COUNTER_CLOCKWISE = -1
 LEFT = -1
 
-shapes = ['i', 'o', 't', 'l', 'j', 's', 'z']
-
 offsets = {
-    0: (-2, 1),
-    1: (-1, 1),
-    2: (0, 1),
-    3: (1, 1),
-    4: (-2, 0),
-    5: (-1, 0),
-    6: (0, 0),
-    7: (1, 0),
-    8: (-2, -1),
-    9: (-1, -1),
-    10: (0, -1),
-    11: (1, -1),
-    12: (-2, -2),
-    13: (-1, -2),
-    14: (0, -2),
-    15: (1, -2),
-}
-
-# 0  1  2  3
-# 4  5  6  7
-# 8  9  10 11
-# 12 13 14 15
-shape_orientations = {
-    'i':
-    [
-        '0000000011110000',
-        '0010001000100010'
-    ],
-    'o': 
-    [
-        '0000011001100000'
-    ],
-    't':
-    [
-        '0000011100100000',
-        '0010011000100000',
-        '0010011100000000',
-        '0010001100100000'
-    ],
-    'l':
-    [
-        '0000011101000000',
-        '0110001000100000',
-        '0001011100000000',
-        '0010001000110000'
-    ],
-    'j':
-    [
-        '0000011100010000',
-        '0010001001100000',
-        '0100011100000000',
-        '0011001000100000'
-    ],
-    's':
-    [
-        '0000001101100000',
-        '0000001000110001',
-    ],
-    'z':
-    [
-        '0000011000110000',
-        '0000000100110010',
-    ]
-}
-
-colors = {
-    'i': (200,200,255),
-    'o': (200,200,255),
-    't': (200,200,255),
-    'l': (255, 0, 0),
-    'j': (0, 0, 255),
-    's': (0,0,255),
-    'z': (255,0,0),
+    0: (-2, 1), 1: (-1, 1), 2: (0, 1), 3: (1, 1),
+    4: (-2, 0), 5: (-1, 0), 6: (0, 0), 7: (1, 0),
+    8: (-2, -1), 9: (-1, -1), 10: (0, -1), 11: (1, -1),
+    12: (-2, -2), 13: (-1, -2), 14: (0, -2), 15: (1, -2),
 }
 
 frames = {
-    0: 48,
-    1: 43,
-    2: 38,
-    3: 33,
-    4: 28,
-    5: 23,
-    6: 18,
-    7: 13,
-    8: 8,
-    9: 6,
-    10: 5,
-    11: 5,
-    12: 5,
-    13: 4,
-    14: 4,
-    15: 4,
-    16: 3,
-    17: 3,
-    18: 3,
-    19: 2,
-    29: 1
-}
-
-level_delay = {
-    0: 10,
-    1: 20,
-    2: 30,
-    3: 40,
-    4: 50,
-    5: 60,
-    6: 70,
-    7: 80,
-    8: 90,
-    9: 100,
-    10: 100,
-    11: 100,
-    12: 100,
-    13: 100,
-    14: 100,
-    15: 100,
-    16: 110,
-    17: 120,
-    18: 130,
-    19: 140,
-    20: 150,
-    21: 160,
-    22: 170,
-    23: 180,
-    24: 190,
-    25: 200,
-    26: 200,
-    27: 200,
-    28: 200,
-    29: 200
-}
-
-def get_new_letter(prev_piece_index):
-    new_piece = random.randint(0, 7)
-    if new_piece == 7 or shapes[new_piece] == prev_piece_index:
-        new_piece = random.randint(0, 6)
-
-    return shapes[new_piece], new_piece
+    0: 48, 1: 43, 2: 38, 3: 33, 4: 28, 5: 23, 6: 18, 
+    7: 13, 8: 8, 9: 6, 10: 5, 11: 5, 12: 5, 13: 4, 
+    14: 4, 15: 4, 16: 3, 17: 3, 18: 3, 19: 2, 29: 1
+}  
 
 def update_placement(piece, color):
     for idx, block in enumerate(piece.orientation):
@@ -166,31 +34,6 @@ def update_placement(piece, color):
                 continue
             board.blocks[spot] = color
 
-def check_and_update_placement(piece, before_piece):
-    seen_spots = []
-    for idx, block in enumerate(before_piece.orientation):
-        if block == '1':
-            col_offset, row_offset = offsets[idx]
-            spot = (before_piece.col + col_offset, before_piece.row + row_offset)
-            seen_spots.append(spot)
-
-    for idx, block in enumerate(piece.orientation):
-        if block == '1':
-            col_offset, row_offset = offsets[idx]
-            spot = (piece.col + col_offset, piece.row + row_offset)
-            
-            if spot[0] >= TOTAL_COLS or spot[0] < 0 or spot[1] < 0:
-                return False
-            if spot[1] >= TOTAL_ROWS:
-                continue
-            if board.blocks[spot] != (0, 0, 0) and spot not in seen_spots:
-                return False
-            
-    update_placement(before_piece, (0, 0, 0))
-    update_placement(piece, piece.color)
-
-    return True
-
 def check_loss(piece):
     for idx, block in enumerate(piece.orientation):
         if block == '1':
@@ -199,87 +42,6 @@ def check_loss(piece):
             
             if board.blocks[spot] != (0, 0, 0):
                 return True
-
-class Piece:
-    def __init__(self, prev_piece_index):
-        self.col = START_COL
-        self.row = START_ROW
-        self.letter, self.letter_index = get_new_letter(prev_piece_index)
-        self.color = colors[self.letter]
-        self.can_move = True
-        # list of binary represenations
-        self.orientations = shape_orientations[self.letter]
-        # index for current orientation of piece
-        self.orientations_index = 0
-        # binary represenation of current piece orientation
-        self.orientation = self.orientations[self.orientations_index]
-        
-    def move_down(self):
-        if not self.can_move:
-            return
-        
-        before_piece = copy.deepcopy(self)
-        self.row -= 1
-
-        if not check_and_update_placement(self, before_piece):
-            self.row += 1
-            self.can_move = False
-  
-    # direction is 1 (right) or -1 (left)
-    def move_sideways(self, direction):
-        if not self.can_move:
-            return
-        before_piece = copy.deepcopy(self)
-        self.col += direction
-        if not check_and_update_placement(self, before_piece):
-            self.col -= direction
-    
-    # direction is 1 (clockwise) or -1 (counter clockwise)
-    def rotate(self, direction):
-        before_piece = copy.deepcopy(self)
-        original_orientation = self.orientations_index
-        
-        self.orientations_index = (self.orientations_index + direction) % len(self.orientations)
-        self.orientation = self.orientations[self.orientations_index]
-        
-        if not check_and_update_placement(self, before_piece):
-            self.orientations_index = original_orientation
-            self.orientation = self.orientations[self.orientations_index]
-
-
-class Board:
-    def __init__(self, level):
-        self.blocks = {(col, row): (0, 0, 0) for col in range(10) for row in range(20)}
-        self.score = 0
-        self.level = level
-        self.lines_cleared = 0
-        self.lines_until_level_change = level_delay[self.level]
-        
-    def clear_lines(self):
-        rows_cleared = [False for _ in range(TOTAL_ROWS)]
-        for row in range(TOTAL_ROWS):
-            clear = True
-            for col in range(TOTAL_COLS):
-                if self.blocks[(col, row)] == (0, 0, 0):
-                    clear = False
-                    break
-
-            rows_cleared[row] = clear
-        
-        # Move lines down
-        offset = 0
-        for row in range(TOTAL_ROWS):
-            if rows_cleared[row]:
-                offset += 1
-                continue
-            elif offset == 0:
-                continue
-
-            for col in range(TOTAL_COLS):
-                self.blocks[(col, row - offset)] = self.blocks[(col, row)]
-                self.blocks[(col, row)] = (0, 0, 0)
-        
-        return offset
 
 # pygame setup
 pygame.init()
@@ -460,7 +222,7 @@ def main():
             frames_index = 19
         if fall_time >= (1.0 / 60) * frames[frames_index] * 3:  # 1.0/60 represents 1 frame at 60 FPS
             fall_time = 0
-            curr_piece.move_down()
+            curr_piece.move_down(board)
 
         keys = pygame.key.get_pressed()
 
@@ -473,21 +235,21 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_j:
-                    curr_piece.move_sideways(LEFT)
+                    curr_piece.move_sideways(LEFT, board)
                     current_shift_delay = SHIFT_DELAY
                     is_j_pressed = True
                 elif event.key == pygame.K_l:
-                    curr_piece.move_sideways(RIGHT)
+                    curr_piece.move_sideways(RIGHT, board)
                     current_shift_delay = SHIFT_DELAY
                     is_l_pressed = True
                 elif event.key == pygame.K_k:
                     speedup = True
-                    curr_piece.move_down()
+                    curr_piece.move_down(board)
                 
                 if event.key == pygame.K_x:
-                    curr_piece.rotate(CLOCKWISE)
+                    curr_piece.rotate(CLOCKWISE, board)
                 elif event.key == pygame.K_z:
-                    curr_piece.rotate(COUNTER_CLOCKWISE)
+                    curr_piece.rotate(COUNTER_CLOCKWISE, board)
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_k:
@@ -504,9 +266,9 @@ def main():
 
         if not curr_piece.can_move:
             if is_j_pressed:
-                curr_piece.move_sideways(LEFT)
+                curr_piece.move_sideways(LEFT, board)
             if is_l_pressed:
-                curr_piece.move_sideways(RIGHT)
+                curr_piece.move_sideways(RIGHT, board)
             board.score += calculate_points(board.clear_lines())
 
             display_score()
@@ -528,9 +290,9 @@ def main():
         elif current_shift_interval == 0:
             # If the delay is over and it's time for the next shift
             if keys[pygame.K_j] and is_j_pressed:
-                curr_piece.move_sideways(LEFT)
+                curr_piece.move_sideways(LEFT, board)
             elif keys[pygame.K_l] and is_l_pressed:
-                curr_piece.move_sideways(RIGHT)
+                curr_piece.move_sideways(RIGHT, board)
             current_shift_interval = SHIFT_INTERVAL
         elif current_shift_interval > 0:
             current_shift_interval -= 1
