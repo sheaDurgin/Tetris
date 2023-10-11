@@ -13,7 +13,7 @@ NEXT_PIECE_X = 500
 NEXT_PIECE_Y = 1065
 
 SHIFT_DELAY = 16  # Initial delay before repeating the sideways move
-SHIFT_INTERVAL = 5  # Interval between repeated sideways moves
+SHIFT_INTERVAL = 6  # Interval between repeated sideways moves
 
 RIGHT = 1
 LEFT = -1
@@ -103,9 +103,14 @@ class Game:
 
         self.key_presses()
 
-        if self.fall_time >= (1.0 / 60) * frames[frames_index] * 3:  # 1.0/60 represents 1 frame at 60 FPS
+        delay = 0
+        if self.curr_piece.spawn_delay:
+            delay = 0.1
+
+        if self.fall_time >= (1.0 / 60) * frames[frames_index] * 3 + delay:  # 1.0/60 represents 1 frame at 60 FPS
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
+            self.curr_piece.spawn_delay = False
 
         if not self.curr_piece.can_move:
             moved = False
@@ -120,7 +125,8 @@ class Game:
                 self.curr_piece.can_move = True
 
         if not self.curr_piece.can_move:
-            self.board.score += self.board.calculate_points(self.board.clear_lines())
+            lines_cleared = self.board.clear_lines()
+            self.board.score += self.board.calculate_points(lines_cleared)
 
             self.display_score()
             self.display_lines_cleared()
@@ -257,7 +263,7 @@ class Game:
             if block == '1':
                 col_offset, row_offset = offsets[idx]
                 spot = (piece.col + col_offset, piece.row + row_offset)
-                pygame.draw.rect(self.screen, piece.color, (NEXT_PIECE_X + spot[0] * cell_size, NEXT_PIECE_Y + 100 - (spot[1] * cell_size), cell_size, cell_size))
+                pygame.draw.rect(self.screen, piece.color, (NEXT_PIECE_X + spot[0] * cell_size, NEXT_PIECE_Y + 75 - (spot[1] * cell_size), cell_size, cell_size))
 
     def select_level(self):
         pygame.init()
