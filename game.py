@@ -99,18 +99,8 @@ class Game:
             frames_index = 13
         elif frames_index >= 10:
             frames_index = 10
-        
-        if self.is_j_pressed:
-            self.test()
-        else:
-            self.test_remove()
 
         self.key_presses()
-
-        if self.is_j_pressed:
-            self.test()
-        else:
-            self.test_remove()
 
         if self.fall_time >= (1.0 / 60) * frames[frames_index] * 3:  # 1.0/60 represents 1 frame at 60 FPS
             self.fall_time = 0
@@ -225,18 +215,6 @@ class Game:
 
         # Draw the border rectangle
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
-
-    def test_remove(self):
-        text = self.font.render("____", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.center = (screen_width // 8, 50)
-
-        pygame.draw.rect(self.screen, (0, 0, 0), (text_rect.left, text_rect.top, text_rect.width, text_rect.height))
-
-        self.screen.blit(text, text_rect)
-
-    def test(self):
-        self.display_text(f"LEFT", 8)
     
     def display_high_score(self):
         self.display_text(f"High Score", 1.15, 150)
