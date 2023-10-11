@@ -52,5 +52,3 @@ class Board:
             self.level += 1
 
         return score_per_line_cleared[lines_cleared - 1] * (self.level + 1)
-    
-    

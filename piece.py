@@ -60,12 +60,12 @@ shape_orientations = {
     's':
     [
         '0000001101100000',
-        '0000001000110001',
+        '0100011000100000',
     ],
     'z':
     [
         '0000011000110000',
-        '0000000100110010',
+        '0001001100100000',
     ]
 }
 
@@ -155,5 +155,3 @@ class Piece:
         self.update_placement(self, self.color, board)
 
         return True
-    
-    

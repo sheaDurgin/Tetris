@@ -38,6 +38,7 @@ class Game:
         self.high_score = high_score
 
         pygame.init()
+        self.font = pygame.font.Font(None, 36)
         self.board = Board(self.select_level())
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.screen.fill("black")
@@ -191,53 +192,26 @@ class Game:
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
     
     def display_high_score(self):
-        font = pygame.font.Font(None, 36)
-        high_score_text = f"High Score"
-        high_score_value_text = f"{self.high_score}"
-        
-        text_surface = font.render(high_score_text, True, (255, 255, 255))
-        value_surface = font.render(high_score_value_text, True, (255, 255, 255))
-
-        text_rect = text_surface.get_rect()
-        value_rect = value_surface.get_rect()
-
-        # Position the text and value surfaces
-        text_rect.center = (screen_width // 1.15, 200)
-        value_rect.center = (screen_width // 1.15, 235)
-
-        # Draw the text and value surfaces
-        self.screen.blit(text_surface, text_rect)
-        self.screen.blit(value_surface, value_rect)
+        self.display_text(f"High Score", 1.15, 150)
+        self.display_text(f"{self.high_score}", 1.15, 185)
 
     def display_score(self):
-        font = pygame.font.Font(None, 36)
-        text = font.render(f"Score: {self.board.score}", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.center = (screen_width // 1.3, 50)
-
-        pygame.draw.rect(self.screen, (0, 0, 0), (text_rect.left, text_rect.top, text_rect.width, text_rect.height))
-
-        self.screen.blit(text, text_rect)
+        self.display_text(f"Score: {self.board.score}", 1.3)
 
     def display_lines_cleared(self):
-        font = pygame.font.Font(None, 36)
-        text = font.render(f"Lines: {self.board.lines_cleared}", True, (255, 255, 255))
+        self.display_text(f"Lines: {self.board.lines_cleared}", 4)
+    
+    def display_text(self, text_string, x_constant, y_constant=0):
+        text = self.font.render(text_string, True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.center = (screen_width // 4, 50)
+        text_rect.center = (screen_width // x_constant, 50 + y_constant)
 
         pygame.draw.rect(self.screen, (0, 0, 0), (text_rect.left, text_rect.top, text_rect.width, text_rect.height))
 
         self.screen.blit(text, text_rect)
 
     def display_level(self):
-        font = pygame.font.Font(None, 36)
-        text = font.render(f"Level: {self.board.level}", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.center = (screen_width // 2, 50)
-
-        pygame.draw.rect(self.screen, (0, 0, 0), (text_rect.left, text_rect.top, text_rect.width, text_rect.height))
-
-        self.screen.blit(text, text_rect)
+        self.display_text(f"Level: {self.board.level}", 2)
 
     def display_next_piece(self, piece):
         # Clear the area where the next piece will be displayed
@@ -257,7 +231,6 @@ class Game:
 
         selected_level = 0  # Initial selected level
         levels = 30  # Total number of levels
-        font = pygame.font.Font(None, 36)  # Font for displaying the level
         text_color = (255, 255, 255)  # White text color
         background_color = (0, 0, 0)  # Black background color
 
@@ -291,7 +264,7 @@ class Game:
             screen.fill(background_color)
 
             # Display the selected level
-            text = font.render(f"Selected Level: {selected_level}", True, text_color)
+            text = self.font.render(f"Selected Level: {selected_level}", True, text_color)
             text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
             screen.blit(text, text_rect)
 
