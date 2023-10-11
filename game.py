@@ -26,6 +26,11 @@ frames = {
     14: 4, 15: 4, 16: 3, 17: 3, 18: 3, 19: 2, 29: 1
 }  
 
+frames = {
+    0: 48, 1: 43, 2: 38, 3: 33, 4: 28, 5: 23, 6: 18, 
+    7: 13, 8: 8, 9: 6, 10: 5, 13: 4, 16: 3, 19: 2, 29: 1
+}  
+
 offsets = {
     0: (-2, 1), 1: (-1, 1), 2: (0, 1), 3: (1, 1),
     4: (-2, 0), 5: (-1, 0), 6: (0, 0), 7: (1, 0),
@@ -47,6 +52,9 @@ class Game:
         self.top_left_y = screen_height - (TOTAL_ROWS * cell_size)
 
         self.running = True
+
+        self.can_move_left = False
+        self.can_move_right = False
 
         self.curr_piece = Piece(-1)
         self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
@@ -80,16 +88,85 @@ class Game:
 
         self.fall_time += dt
         frames_index = self.board.level
+        
         if frames_index >= 29:
             frames_index = 29
         elif frames_index >= 19:
             frames_index = 19
+        elif frames_index >= 16:
+            frames_index = 16
+        elif frames_index >= 13:
+            frames_index = 13
+        elif frames_index >= 10:
+            frames_index = 10
+        
+        if self.is_j_pressed:
+            self.test()
+        else:
+            self.test_remove()
+
+        self.key_presses()
+
+        if self.is_j_pressed:
+            self.test()
+        else:
+            self.test_remove()
+
         if self.fall_time >= (1.0 / 60) * frames[frames_index] * 3:  # 1.0/60 represents 1 frame at 60 FPS
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
 
-        keys = pygame.key.get_pressed()
+        if not self.curr_piece.can_move:
+            moved = False
+            if self.is_j_pressed:
+                moved = self.curr_piece.move_sideways(LEFT, self.board)
+            elif self.is_l_pressed:
+                moved = self.curr_piece.move_sideways(RIGHT, self.board)
 
+            can_move_down = self.curr_piece.can_move_down(self.board)
+
+            if moved and can_move_down:
+                self.curr_piece.can_move = True
+
+        if not self.curr_piece.can_move:
+            self.board.score += self.board.calculate_points(self.board.clear_lines())
+
+            self.display_score()
+            self.display_lines_cleared()
+            self.display_level()
+
+            self.speedup = False
+            self.curr_piece = self.next_piece
+            if self.check_loss():
+                self.running = False
+            self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
+            self.next_piece = Piece(self.curr_piece.letter_index)
+
+            self.display_next_piece(self.next_piece)
+
+        # Handle sideways autoshift
+        if self.current_shift_delay > 0:
+            self.current_shift_delay -= 1
+        elif self.current_shift_interval == 0:
+            # If the delay is over and it's time for the next shift
+            if self.is_j_pressed:
+                self.curr_piece.move_sideways(LEFT, self.board)
+            elif self.is_l_pressed:
+                self.curr_piece.move_sideways(RIGHT, self.board)
+            self.current_shift_interval = SHIFT_INTERVAL
+        elif self.current_shift_interval > 0:
+            self.current_shift_interval -= 1
+
+        if self.speedup:
+            self.fall_time += dt * (100 - self.board.level * 2)
+        else:
+            self.fall_time += dt
+
+        pygame.display.update()
+
+        return self.running, self.board.score
+    
+    def key_presses(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -97,12 +174,12 @@ class Game:
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_j:
-                    self.curr_piece.move_sideways(LEFT, self.board)
-                    self.current_shift_delay = SHIFT_DELAY
+                    if self.curr_piece.move_sideways(LEFT, self.board):
+                        self.current_shift_delay = SHIFT_DELAY
                     self.is_j_pressed = True
                 elif event.key == pygame.K_l:
-                    self.curr_piece.move_sideways(RIGHT, self.board)
-                    self.current_shift_delay = SHIFT_DELAY
+                    if self.curr_piece.move_sideways(RIGHT, self.board):
+                        self.current_shift_delay = SHIFT_DELAY
                     self.is_l_pressed = True
                 elif event.key == pygame.K_k:
                     self.speedup = True
@@ -126,48 +203,6 @@ class Game:
                     self.current_shift_delay = 0
                     self.current_shift_interval = 0
 
-        if not self.curr_piece.can_move:
-            if self.is_j_pressed:
-                self.curr_piece.move_sideways(LEFT, self.board)
-            if self.is_l_pressed:
-                self.curr_piece.move_sideways(RIGHT, self.board)
-            self.board.score += self.board.calculate_points(self.board.clear_lines())
-
-            self.display_score()
-            self.display_lines_cleared()
-            self.display_level()
-
-            self.speedup = False
-            self.curr_piece = self.next_piece
-            if self.check_loss():
-                self.running = False
-            self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
-            self.next_piece = Piece(self.curr_piece.letter_index)
-
-            self.display_next_piece(self.next_piece)
-
-        # Handle sideways autoshift
-        if self.current_shift_delay > 0:
-            self.current_shift_delay -= 1
-        elif self.current_shift_interval == 0:
-            # If the delay is over and it's time for the next shift
-            if keys[pygame.K_j] and self.is_j_pressed:
-                self.curr_piece.move_sideways(LEFT, self.board)
-            elif keys[pygame.K_l] and self.is_l_pressed:
-                self.curr_piece.move_sideways(RIGHT, self.board)
-            self.current_shift_interval = SHIFT_INTERVAL
-        elif self.current_shift_interval > 0:
-            self.current_shift_interval -= 1
-
-        if self.speedup:
-            self.fall_time += dt * (100 - self.board.level * 2)
-        else:
-            self.fall_time += dt
-
-        pygame.display.update()
-
-        return self.running, self.board.score
-
     def check_loss(self):
         for idx, block in enumerate(self.curr_piece.orientation):
             if block == '1':
@@ -190,6 +225,18 @@ class Game:
 
         # Draw the border rectangle
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
+
+    def test_remove(self):
+        text = self.font.render("____", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.center = (screen_width // 8, 50)
+
+        pygame.draw.rect(self.screen, (0, 0, 0), (text_rect.left, text_rect.top, text_rect.width, text_rect.height))
+
+        self.screen.blit(text, text_rect)
+
+    def test(self):
+        self.display_text(f"LEFT", 8)
     
     def display_high_score(self):
         self.display_text(f"High Score", 1.15, 150)

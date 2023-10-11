@@ -89,26 +89,32 @@ class Piece:
         self.orientations_index = 0
         # binary represenation of current piece orientation
         self.orientation = self.orientations[self.orientations_index]
+
+    def can_move_down(self, board):
+        before_piece = copy.deepcopy(self)
+        self.row -= 1
+        val = True
+        if not self.check_and_update_placement(before_piece, board, False):
+            val = False
+        self.row += 1
+        return val
         
     def move_down(self, board):
-        if not self.can_move:
-            return
-        
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
         if not self.check_and_update_placement(before_piece, board):
             self.row += 1
             self.can_move = False
-  
+
     # direction is 1 (right) or -1 (left)
     def move_sideways(self, direction, board):
-        if not self.can_move:
-            return
         before_piece = copy.deepcopy(self)
         self.col += direction
         if not self.check_and_update_placement(before_piece, board):
             self.col -= direction
+            return False
+        return True
     
     # direction is 1 (clockwise) or -1 (counter clockwise)
     def rotate(self, direction, board):
@@ -131,7 +137,7 @@ class Piece:
                     continue
                 board.blocks[spot] = color
 
-    def check_and_update_placement(self, before_piece, board):
+    def check_and_update_placement(self, before_piece, board, update=True):
         seen_spots = []
         for idx, block in enumerate(before_piece.orientation):
             if block == '1':
@@ -143,15 +149,15 @@ class Piece:
             if block == '1':
                 col_offset, row_offset = offsets[idx]
                 spot = (self.col + col_offset, self.row + row_offset)
-                
                 if spot[0] >= TOTAL_COLS or spot[0] < 0 or spot[1] < 0:
                     return False
                 if spot[1] >= TOTAL_ROWS:
                     continue
                 if board.blocks[spot] != (0, 0, 0) and spot not in seen_spots:
                     return False
-                
-        self.update_placement(before_piece, (0, 0, 0), board)
-        self.update_placement(self, self.color, board)
+
+        if update:
+            self.update_placement(before_piece, (0, 0, 0), board)
+            self.update_placement(self, self.color, board)
 
         return True
