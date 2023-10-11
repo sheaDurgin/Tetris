@@ -5,6 +5,8 @@ level_delay = {
     25: 200, 26: 200, 27: 200, 28: 200, 29: 200
 }
 
+score_per_line_cleared = [40, 100, 300, 1200, 0]
+
 TOTAL_ROWS = 20
 TOTAL_COLS = 10
 
@@ -41,3 +43,14 @@ class Board:
                 self.blocks[(col, row)] = (0, 0, 0)
         
         return offset
+    
+    def calculate_points(self, lines_cleared):
+        self.lines_cleared += lines_cleared
+
+        if self.lines_until_level_change <= self.lines_cleared:
+            self.lines_until_level_change += 10
+            self.level += 1
+
+        return score_per_line_cleared[lines_cleared - 1] * (self.level + 1)
+    
+    

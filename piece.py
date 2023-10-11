@@ -76,40 +76,6 @@ def get_new_letter(prev_piece_index):
 
     return shapes[new_piece], new_piece
 
-def update_placement(piece, color, board):
-    for idx, block in enumerate(piece.orientation):
-        if block == '1':
-            col_offset, row_offset = offsets[idx]
-            spot = (piece.col + col_offset, piece.row + row_offset)
-            if spot[1] >= TOTAL_ROWS:
-                continue
-            board.blocks[spot] = color
-
-def check_and_update_placement(piece, before_piece, board):
-    seen_spots = []
-    for idx, block in enumerate(before_piece.orientation):
-        if block == '1':
-            col_offset, row_offset = offsets[idx]
-            spot = (before_piece.col + col_offset, before_piece.row + row_offset)
-            seen_spots.append(spot)
-
-    for idx, block in enumerate(piece.orientation):
-        if block == '1':
-            col_offset, row_offset = offsets[idx]
-            spot = (piece.col + col_offset, piece.row + row_offset)
-            
-            if spot[0] >= TOTAL_COLS or spot[0] < 0 or spot[1] < 0:
-                return False
-            if spot[1] >= TOTAL_ROWS:
-                continue
-            if board.blocks[spot] != (0, 0, 0) and spot not in seen_spots:
-                return False
-            
-    update_placement(before_piece, (0, 0, 0), board)
-    update_placement(piece, piece.color, board)
-
-    return True
-
 class Piece:
     def __init__(self, prev_piece_index):
         self.col = START_COL
@@ -131,7 +97,7 @@ class Piece:
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
-        if not check_and_update_placement(self, before_piece, board):
+        if not self.check_and_update_placement(before_piece, board):
             self.row += 1
             self.can_move = False
   
@@ -141,7 +107,7 @@ class Piece:
             return
         before_piece = copy.deepcopy(self)
         self.col += direction
-        if not check_and_update_placement(self, before_piece, board):
+        if not self.check_and_update_placement(before_piece, board):
             self.col -= direction
     
     # direction is 1 (clockwise) or -1 (counter clockwise)
@@ -152,8 +118,42 @@ class Piece:
         self.orientations_index = (self.orientations_index + direction) % len(self.orientations)
         self.orientation = self.orientations[self.orientations_index]
         
-        if not check_and_update_placement(self, before_piece, board):
+        if not self.check_and_update_placement(before_piece, board):
             self.orientations_index = original_orientation
             self.orientation = self.orientations[self.orientations_index]
+
+    def update_placement(self, piece, color, board):
+        for idx, block in enumerate(piece.orientation):
+            if block == '1':
+                col_offset, row_offset = offsets[idx]
+                spot = (piece.col + col_offset, piece.row + row_offset)
+                if spot[1] >= TOTAL_ROWS:
+                    continue
+                board.blocks[spot] = color
+
+    def check_and_update_placement(self, before_piece, board):
+        seen_spots = []
+        for idx, block in enumerate(before_piece.orientation):
+            if block == '1':
+                col_offset, row_offset = offsets[idx]
+                spot = (before_piece.col + col_offset, before_piece.row + row_offset)
+                seen_spots.append(spot)
+
+        for idx, block in enumerate(self.orientation):
+            if block == '1':
+                col_offset, row_offset = offsets[idx]
+                spot = (self.col + col_offset, self.row + row_offset)
+                
+                if spot[0] >= TOTAL_COLS or spot[0] < 0 or spot[1] < 0:
+                    return False
+                if spot[1] >= TOTAL_ROWS:
+                    continue
+                if board.blocks[spot] != (0, 0, 0) and spot not in seen_spots:
+                    return False
+                
+        self.update_placement(before_piece, (0, 0, 0), board)
+        self.update_placement(self, self.color, board)
+
+        return True
     
     
