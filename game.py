@@ -97,6 +97,7 @@ class Game:
 
         if not self.curr_piece.can_move:
             self.check_if_tucked()
+            pygame.display.update()
 
         if not self.curr_piece.can_move:
             self.piece_landed()
@@ -150,13 +151,10 @@ class Game:
             moved = self.curr_piece.move_sideways(LEFT, self.board)
         elif self.is_l_pressed:
             moved = self.curr_piece.move_sideways(RIGHT, self.board)
-        
-        print(moved)
 
         can_move_down = self.curr_piece.can_move_down(self.board)
 
         if moved and can_move_down:
-            print("IT HAPPENED")
             self.curr_piece.can_move = True
 
     def handle_das(self):
