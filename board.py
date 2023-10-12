@@ -10,6 +10,19 @@ score_per_line_cleared = [40, 100, 300, 1200, 0]
 TOTAL_ROWS = 20
 TOTAL_COLS = 10
 
+def get_frames_index(level):
+    if level >= 29:
+        return 29
+    elif level >= 19:
+        return 19
+    elif level >= 16:
+        return 16
+    elif level >= 13:
+        return 13
+    elif level >= 10:
+        return 10
+    return level
+
 class Board:
     def __init__(self, level):
         self.blocks = {(col, row): (0, 0, 0) for col in range(10) for row in range(20)}
@@ -17,6 +30,7 @@ class Board:
         self.level = level
         self.lines_cleared = 0
         self.lines_until_level_change = level_delay[self.level]
+        self.frames_index = get_frames_index(self.level)
         
     def clear_lines(self):
         rows_cleared = [False for _ in range(TOTAL_ROWS)]
@@ -50,5 +64,6 @@ class Board:
         if self.lines_until_level_change <= self.lines_cleared:
             self.lines_until_level_change += 10
             self.level += 1
+            self.frames_index = get_frames_index(self.level)
 
         return score_per_line_cleared[lines_cleared - 1] * (self.level + 1)

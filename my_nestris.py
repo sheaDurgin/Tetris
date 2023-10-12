@@ -1,13 +1,13 @@
 from game import Game
 import os
 
-def main():
+def main(starting_level):
     # Read scores from scores.txt and keep them sorted in descending order
     scores = read_scores()
     scores.sort(reverse=True)
-    game = Game(scores[0])
+    game = Game(scores[0], starting_level)
     while True:
-        game_on, score = game.run()
+        game_on, score, starting_level = game.run()
         if not game_on:
             break
 
@@ -17,6 +17,8 @@ def main():
 
     # Write the updated scores back to scores.txt
     write_scores(scores)
+    
+    return starting_level
 
 def read_scores():
     scores = []
@@ -37,6 +39,8 @@ if __name__ == "__main__":
     if not os.path.exists("scores.txt"):
         with open("scores.txt", "w") as file:
             file.write("0")
+        
+    starting_level = 18
 
     while True:
-        main()
+        starting_level = main(starting_level)

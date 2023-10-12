@@ -22,12 +22,6 @@ COUNTER_CLOCKWISE = -1
 
 frames = {
     0: 48, 1: 43, 2: 38, 3: 33, 4: 28, 5: 23, 6: 18, 
-    7: 13, 8: 8, 9: 6, 10: 5, 11: 5, 12: 5, 13: 4, 
-    14: 4, 15: 4, 16: 3, 17: 3, 18: 3, 19: 2, 29: 1
-}  
-
-frames = {
-    0: 48, 1: 43, 2: 38, 3: 33, 4: 28, 5: 23, 6: 18, 
     7: 13, 8: 8, 9: 6, 10: 5, 13: 4, 16: 3, 19: 2, 29: 1
 }  
 
@@ -38,13 +32,23 @@ offsets = {
     12: (-2, -2), 13: (-1, -2), 14: (0, -2), 15: (1, -2),
 }
 
+def delay_after_landing(lines_cleared):
+    delay_clock = pygame.time.Clock()
+    total_time = 0
+    delay_time = 0.2 if lines_cleared > 0 else 0.1
+
+    while total_time < delay_time:
+        dt = delay_clock.tick(60) / 1000
+        total_time += dt
+
 class Game:
-    def __init__(self, high_score):
+    def __init__(self, high_score, starting_level):
         self.high_score = high_score
 
         pygame.init()
         self.font = pygame.font.Font(None, 36)
-        self.board = Board(self.select_level())
+        self.first_level = self.select_level(starting_level)
+        self.board = Board(self.first_level)
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.screen.fill("black")
 
@@ -71,8 +75,8 @@ class Game:
         self.display_lines_cleared()
         self.display_level()
 
-        self.current_shift_delay = 0  # Counter for delay
-        self.current_shift_interval = 0  # Counter for interval
+        self.current_shift_delay = 0
+        self.current_shift_interval = 0
 
         self.speedup = False
 
@@ -84,64 +88,78 @@ class Game:
         self.draw_border()
         self.display_high_score()
 
-        # Get the elapsed time in seconds since the last frame
         dt = self.clock.tick(60) / 1000
-
         self.fall_time += dt
-        frames_index = self.board.level
-        
-        if frames_index >= 29:
-            frames_index = 29
-        elif frames_index >= 19:
-            frames_index = 19
-        elif frames_index >= 16:
-            frames_index = 16
-        elif frames_index >= 13:
-            frames_index = 13
-        elif frames_index >= 10:
-            frames_index = 10
 
         self.key_presses()
 
+        self.fall()
+
+        if not self.curr_piece.can_move:
+            self.check_if_tucked()
+
+        if not self.curr_piece.can_move:
+            self.piece_landed()
+
+        self.handle_das()
+
+        if self.speedup:
+            self.fall_time += dt * 50 / ((self.board.level % 5) + 1) 
+        else:
+            self.fall_time += dt
+
+        pygame.display.update()
+
+        return self.running, self.board.score, self.first_level
+    
+    def fall(self):
         delay = 0
         if self.curr_piece.spawn_delay:
             delay = 0.1
 
-        if self.fall_time >= (1.0 / 60) * frames[frames_index] * 3 + delay:  # 1.0/60 represents 1 frame at 60 FPS
+        if self.fall_time >= (1.0 / 60) * frames[self.board.frames_index] * 3 + delay:  # 1.0/60 represents 1 frame at 60 FPS
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
             self.curr_piece.spawn_delay = False
+    
+    def piece_landed(self):
+        lines_cleared = self.board.clear_lines()
+        self.board.score += self.board.calculate_points(lines_cleared)
 
-        if not self.curr_piece.can_move:
-            moved = False
-            if self.is_j_pressed:
-                moved = self.curr_piece.move_sideways(LEFT, self.board)
-            elif self.is_l_pressed:
-                moved = self.curr_piece.move_sideways(RIGHT, self.board)
+        self.display_score()
+        self.display_lines_cleared()
+        self.display_level()
+        pygame.display.update()
 
-            can_move_down = self.curr_piece.can_move_down(self.board)
+        delay_after_landing(lines_cleared)
 
-            if moved and can_move_down:
-                self.curr_piece.can_move = True
+        self.speedup = False
+        self.curr_piece = self.next_piece
+        
+        if self.check_loss():
+            self.running = False
 
-        if not self.curr_piece.can_move:
-            lines_cleared = self.board.clear_lines()
-            self.board.score += self.board.calculate_points(lines_cleared)
+        self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
+        self.next_piece = Piece(self.curr_piece.letter_index)
 
-            self.display_score()
-            self.display_lines_cleared()
-            self.display_level()
+        self.display_next_piece(self.next_piece)
 
-            self.speedup = False
-            self.curr_piece = self.next_piece
-            if self.check_loss():
-                self.running = False
-            self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
-            self.next_piece = Piece(self.curr_piece.letter_index)
+    def check_if_tucked(self):
+        moved = False
+        if self.is_j_pressed:
+            moved = self.curr_piece.move_sideways(LEFT, self.board)
+        elif self.is_l_pressed:
+            moved = self.curr_piece.move_sideways(RIGHT, self.board)
+        
+        print(moved)
 
-            self.display_next_piece(self.next_piece)
+        can_move_down = self.curr_piece.can_move_down(self.board)
 
-        # Handle sideways autoshift
+        if moved and can_move_down:
+            print("IT HAPPENED")
+            self.curr_piece.can_move = True
+
+    def handle_das(self):
         if self.current_shift_delay > 0:
             self.current_shift_delay -= 1
         elif self.current_shift_interval == 0:
@@ -153,15 +171,6 @@ class Game:
             self.current_shift_interval = SHIFT_INTERVAL
         elif self.current_shift_interval > 0:
             self.current_shift_interval -= 1
-
-        if self.speedup:
-            self.fall_time += dt * (100 - self.board.level * 2)
-        else:
-            self.fall_time += dt
-
-        pygame.display.update()
-
-        return self.running, self.board.score
     
     def key_presses(self):
         for event in pygame.event.get():
@@ -265,15 +274,15 @@ class Game:
                 spot = (piece.col + col_offset, piece.row + row_offset)
                 pygame.draw.rect(self.screen, piece.color, (NEXT_PIECE_X + spot[0] * cell_size, NEXT_PIECE_Y + 75 - (spot[1] * cell_size), cell_size, cell_size))
 
-    def select_level(self):
+    def select_level(self, starting_level):
         pygame.init()
         screen = pygame.display.set_mode((screen_width, screen_height))
         pygame.display.set_caption("Select Level")
 
-        selected_level = 0  # Initial selected level
-        levels = 30  # Total number of levels
-        text_color = (255, 255, 255)  # White text color
-        background_color = (0, 0, 0)  # Black background color
+        selected_level = starting_level
+        levels = 30
+        text_color = (255, 255, 255)
+        background_color = (0, 0, 0)
 
         key_delay = 125  # Delay in milliseconds between key presses
         key_timer = 0
