@@ -145,12 +145,12 @@ class Game:
         if self.current_shift_delay > 0:
             self.current_shift_delay -= 1
         elif self.current_shift_interval <= 0:
-            # If the delay is over and it's time for the next shift
             if self.is_j_pressed:
-                self.curr_piece.move_sideways(LEFT, self.board)
+                if self.curr_piece.move_sideways(LEFT, self.board):
+                    self.current_shift_interval = SHIFT_INTERVAL
             elif self.is_l_pressed:
-                self.curr_piece.move_sideways(RIGHT, self.board)
-            self.current_shift_interval = SHIFT_INTERVAL
+                if self.curr_piece.move_sideways(RIGHT, self.board):
+                    self.current_shift_interval = SHIFT_INTERVAL
         elif self.current_shift_interval > 0:
             self.current_shift_interval -= 1
     
