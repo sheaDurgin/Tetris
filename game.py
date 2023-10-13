@@ -141,6 +141,21 @@ class Game:
 
         self.display_next_piece(self.next_piece)
 
+    def check_if_tucked(self):
+        moved = False
+        if self.is_j_pressed:
+            moved = self.curr_piece.move_sideways(LEFT, self.board)
+        elif self.is_l_pressed:
+            moved = self.curr_piece.move_sideways(RIGHT, self.board)
+        
+        print(moved)
+
+        can_move_down = self.curr_piece.can_move_down(self.board)
+
+        if moved and can_move_down:
+            print("IT HAPPENED")
+            self.curr_piece.can_move = True
+
     def handle_das(self):
         if self.current_shift_delay > 0:
             self.current_shift_delay -= 1
