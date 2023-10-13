@@ -95,13 +95,10 @@ class Game:
 
         self.fall()
 
-        if not self.curr_piece.can_move:
-            self.check_if_tucked()
+        self.handle_das()
 
         if not self.curr_piece.can_move:
             self.piece_landed()
-
-        self.handle_das()
 
         if self.speedup:
             self.fall_time += dt * 50 / ((self.board.level % 5) + 1) 
@@ -144,25 +141,10 @@ class Game:
 
         self.display_next_piece(self.next_piece)
 
-    def check_if_tucked(self):
-        moved = False
-        if self.is_j_pressed:
-            moved = self.curr_piece.move_sideways(LEFT, self.board)
-        elif self.is_l_pressed:
-            moved = self.curr_piece.move_sideways(RIGHT, self.board)
-        
-        print(moved)
-
-        can_move_down = self.curr_piece.can_move_down(self.board)
-
-        if moved and can_move_down:
-            print("IT HAPPENED")
-            self.curr_piece.can_move = True
-
     def handle_das(self):
         if self.current_shift_delay > 0:
             self.current_shift_delay -= 1
-        elif self.current_shift_interval == 0:
+        elif self.current_shift_interval <= 0:
             # If the delay is over and it's time for the next shift
             if self.is_j_pressed:
                 self.curr_piece.move_sideways(LEFT, self.board)
@@ -182,10 +164,16 @@ class Game:
                 if event.key == pygame.K_j:
                     if self.curr_piece.move_sideways(LEFT, self.board):
                         self.current_shift_delay = SHIFT_DELAY
+                    else:
+                        self.current_shift_delay = 0
+                        self.current_shift_interval = 0
                     self.is_j_pressed = True
                 elif event.key == pygame.K_l:
                     if self.curr_piece.move_sideways(RIGHT, self.board):
                         self.current_shift_delay = SHIFT_DELAY
+                    else:
+                        self.current_shift_delay = 0
+                        self.current_shift_interval = 0
                     self.is_l_pressed = True
                 elif event.key == pygame.K_k:
                     self.speedup = True
