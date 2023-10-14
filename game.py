@@ -1,6 +1,8 @@
 import pygame
 from piece import Piece
 from board import Board
+import os
+import sys
 
 cell_size = 40
 TOTAL_ROWS = 20
@@ -32,6 +34,14 @@ offsets = {
     12: (-2, -2), 13: (-1, -2), 14: (0, -2), 15: (1, -2),
 }
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 def delay_after_landing(lines_cleared):
     delay_clock = pygame.time.Clock()
     total_time = 0
@@ -44,18 +54,21 @@ def delay_after_landing(lines_cleared):
 class Game:
     def __init__(self, high_score, starting_level):
         self.high_score = high_score
-
+        self.done = False
         pygame.init()
-        self.font = pygame.font.Font(None, 36)
-        self.first_level = self.select_level(starting_level)
-        self.board = Board(self.first_level)
+        self.font = pygame.font.Font(resource_path("ShortBaby-Mg2w.ttf"), 36)
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.screen.fill("black")
+        self.first_level = self.select_level(starting_level)
+        self.running = True
+        if self.first_level < 0:
+            self.done = True
+            return
+        self.board = Board(self.first_level)
 
         self.top_left_x = (screen_width - (TOTAL_COLS * cell_size)) // 2
         self.top_left_y = screen_height - (TOTAL_ROWS * cell_size)
 
-        self.running = True
         self.pause = False
 
         self.can_move_left = False
@@ -84,6 +97,7 @@ class Game:
         self.is_j_pressed = False
 
     def run(self):
+        pygame.display.update()
         self.draw_board()
         self.draw_border()
         self.display_high_score()
@@ -104,10 +118,6 @@ class Game:
             self.fall_time += dt * 50 / ((self.board.level % 5) + 1) 
         else:
             self.fall_time += dt
-
-        pygame.display.update()
-
-        return self.running, self.board.score, self.first_level
     
     def fall(self):
         delay = 0
@@ -157,7 +167,7 @@ class Game:
     def key_presses(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                self.done = True
                 pygame.quit()
 
             if event.type == pygame.KEYDOWN:
@@ -263,8 +273,6 @@ class Game:
                 pygame.draw.rect(self.screen, piece.color, (NEXT_PIECE_X + spot[0] * cell_size, NEXT_PIECE_Y + 75 - (spot[1] * cell_size), cell_size, cell_size))
 
     def select_level(self, starting_level):
-        pygame.init()
-        screen = pygame.display.set_mode((screen_width, screen_height))
         pygame.display.set_caption("Select Level")
 
         selected_level = starting_level
@@ -278,10 +286,6 @@ class Game:
         clock = pygame.time.Clock()
 
         while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-
             keys = pygame.key.get_pressed()
 
             key_timer += clock.tick()
@@ -299,11 +303,15 @@ class Game:
                 return selected_level
 
             # Clear the screen
-            screen.fill(background_color)
+            self.screen.fill(background_color)
 
             # Display the selected level
             text = self.font.render(f"Selected Level: {selected_level}", True, text_color)
             text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
-            screen.blit(text, text_rect)
-
+            self.screen.blit(text, text_rect)
             pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.done = True
+                    pygame.quit()
+                    return -1

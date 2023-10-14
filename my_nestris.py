@@ -6,19 +6,21 @@ def main(starting_level):
     scores = read_scores()
     scores.sort(reverse=True)
     game = Game(scores[0], starting_level)
-    while True:
-        game_on, score, starting_level = game.run()
-        if not game_on:
-            break
+    if game.done:
+            return -1
+    while game.running:
+        game.run()
+        if game.done:
+            return -1
 
     # Add the new score to the list
-    scores.append(score)
+    scores.append(game.board.score)
     scores.sort(reverse=True)  # Sort scores in descending order
 
     # Write the updated scores back to scores.txt
     write_scores(scores)
     
-    return starting_level
+    return game.first_level
 
 def read_scores():
     scores = []
@@ -44,3 +46,5 @@ if __name__ == "__main__":
 
     while True:
         starting_level = main(starting_level)
+        if starting_level == -1:
+            break
