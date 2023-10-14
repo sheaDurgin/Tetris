@@ -106,10 +106,9 @@ class Game:
         self.fall_time += dt
 
         self.key_presses()
+        self.handle_das()
 
         self.fall()
-
-        self.handle_das()
 
         if not self.curr_piece.can_move:
             self.piece_landed()
