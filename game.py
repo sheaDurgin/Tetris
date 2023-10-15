@@ -8,6 +8,8 @@ cell_size = 40
 TOTAL_ROWS = 20
 TOTAL_COLS = 10
 
+FPS = 60
+
 screen_width = 800
 screen_height = 900
 
@@ -43,13 +45,16 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def delay_after_landing(lines_cleared):
+    if lines_cleared == 0:
+        return
     delay_clock = pygame.time.Clock()
     total_time = 0
-    delay_time = 0.2 if lines_cleared > 0 else 0.1
+    delay_time = 5
+    print("111")
 
     while total_time < delay_time:
-        dt = delay_clock.tick(60) / 1000
-        total_time += dt
+        delay_clock.tick(FPS)
+        total_time += 1
 
 class Game:
     def __init__(self, high_score, starting_level):
@@ -95,6 +100,7 @@ class Game:
 
         self.is_l_pressed = False
         self.is_j_pressed = False
+        self.delay = 60
 
     def run(self):
         pygame.display.update()
@@ -102,31 +108,29 @@ class Game:
         self.draw_border()
         self.display_high_score()
 
-        dt = self.clock.tick(60) / 1000
-        self.fall_time += dt
+        self.clock.tick(FPS)
 
         self.key_presses()
         self.handle_das()
 
         self.fall()
+        self.fall_time += 1
 
         if not self.curr_piece.can_move:
             self.piece_landed()
 
         if self.speedup:
-            self.fall_time += dt * 50 / ((self.board.level % 5) + 1) 
-        else:
-            self.fall_time += dt
+            self.fall_time += 1
     
     def fall(self):
-        delay = 0
-        if self.curr_piece.spawn_delay:
-            delay = 0.1
+        if self.curr_piece.spawn_delay and self.delay == 0:
+            self.delay = 8
 
-        if self.fall_time >= (1.0 / 60) * frames[self.board.frames_index] * 3 + delay:  # 1.0/60 represents 1 frame at 60 FPS
+        if self.fall_time >= frames[self.board.frames_index] + self.delay: 
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
             self.curr_piece.spawn_delay = False
+            self.delay = 0
     
     def piece_landed(self):
         lines_cleared = self.board.clear_lines()
@@ -194,7 +198,8 @@ class Game:
                     self.curr_piece.rotate(COUNTER_CLOCKWISE, self.board)
 
                 if event.key == pygame.K_SPACE:
-                    self.pause = True
+                    if not self.is_l_pressed and not self.is_j_pressed:
+                        self.pause = True
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_k:
