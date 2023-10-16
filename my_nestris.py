@@ -1,5 +1,31 @@
 from game import Game
+from piece import Piece
 import os
+import pygame
+
+def piece_landed(game):
+    lines_cleared = game.board.clear_lines()
+    if lines_cleared > 0:
+        game.cleared_lines = True
+    else:
+        game.cleared_lines = False
+    game.board.score += game.board.calculate_points(lines_cleared)
+
+    game.display_score()
+    game.display_lines_cleared()
+    game.display_level()
+    pygame.display.update()
+
+    game.speedup = False
+    game.curr_piece = game.next_piece
+    
+    if game.check_loss():
+        game.running = False
+
+    game.curr_piece.update_placement(game.curr_piece, game.curr_piece.color, game.board)
+    game.next_piece = Piece(game.curr_piece.letter_index)
+
+    game.display_next_piece(game.next_piece)
 
 def main(starting_level):
     # Read scores from scores.txt and keep them sorted in descending order
@@ -10,6 +36,8 @@ def main(starting_level):
             return -1
     while game.running:
         game.run()
+        if not game.curr_piece.can_move:
+            piece_landed(game)
         if game.done:
             return -1
 

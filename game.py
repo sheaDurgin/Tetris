@@ -44,24 +44,13 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-def delay_after_landing(lines_cleared):
-    if lines_cleared == 0:
-        return
-    delay_clock = pygame.time.Clock()
-    total_time = 0
-    delay_time = 5
-    print("111")
-
-    while total_time < delay_time:
-        delay_clock.tick(FPS)
-        total_time += 1
-
 class Game:
     def __init__(self, high_score, starting_level):
         self.high_score = high_score
         self.done = False
         pygame.init()
-        self.font = pygame.font.Font(resource_path("ShortBaby-Mg2w.ttf"), 36)
+        #self.font = pygame.font.Font(resource_path("ShortBaby-Mg2w.ttf"), 36)
+        self.font = pygame.font.SysFont("comicsans", 36)
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.screen.fill("black")
         self.first_level = self.select_level(starting_level)
@@ -101,6 +90,7 @@ class Game:
         self.is_l_pressed = False
         self.is_j_pressed = False
         self.delay = 60
+        self.cleared_lines = False
 
     def run(self):
         pygame.display.update()
@@ -116,15 +106,14 @@ class Game:
         self.fall()
         self.fall_time += 1
 
-        if not self.curr_piece.can_move:
-            self.piece_landed()
-
         if self.speedup:
             self.fall_time += 1
     
     def fall(self):
-        if self.curr_piece.spawn_delay and self.delay == 0:
-            self.delay = 8
+        if self.delay == 0 and self.curr_piece.spawn_delay:
+            self.delay = 10
+            if self.cleared_lines:
+                self.delay = 20
 
         if self.fall_time >= frames[self.board.frames_index] + self.delay: 
             self.fall_time = 0
@@ -132,28 +121,6 @@ class Game:
             self.curr_piece.spawn_delay = False
             self.delay = 0
     
-    def piece_landed(self):
-        lines_cleared = self.board.clear_lines()
-        self.board.score += self.board.calculate_points(lines_cleared)
-
-        self.display_score()
-        self.display_lines_cleared()
-        self.display_level()
-        pygame.display.update()
-
-        delay_after_landing(lines_cleared)
-
-        self.speedup = False
-        self.curr_piece = self.next_piece
-        
-        if self.check_loss():
-            self.running = False
-
-        self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
-        self.next_piece = Piece(self.curr_piece.letter_index)
-
-        self.display_next_piece(self.next_piece)
-
     def handle_das(self):
         if self.current_shift_delay > 0:
             self.current_shift_delay -= 1
