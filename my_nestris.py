@@ -33,7 +33,7 @@ def main(starting_level):
     scores.sort(reverse=True)
     game = Game(scores[0], starting_level)
     if game.done:
-            return -1
+        return -1
     while game.running:
         game.run()
         if not game.curr_piece.can_move:
