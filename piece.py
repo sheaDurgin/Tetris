@@ -104,7 +104,9 @@ class Piece:
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
-        if not self.check_and_update_placement(before_piece, board):
+        if self.check_and_update_placement(before_piece, board):
+            self.can_move = True
+        else:
             self.row += 1
             self.can_move = False
 

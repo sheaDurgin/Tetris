@@ -56,7 +56,7 @@ class Board:
                 self.blocks[(col, row - offset)] = self.blocks[(col, row)]
                 self.blocks[(col, row)] = (0, 0, 0)
         
-        return offset
+        return offset, rows_cleared
     
     def calculate_points(self, lines_cleared):
         self.lines_cleared += lines_cleared
