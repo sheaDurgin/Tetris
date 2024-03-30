@@ -82,7 +82,6 @@ class Piece:
         self.row = START_ROW
         self.letter, self.letter_index = get_new_letter(prev_piece_index)
         self.color = colors[self.letter]
-        self.can_move = True
         # list of binary represenations
         self.orientations = shape_orientations[self.letter]
         # index for current orientation of piece
@@ -104,11 +103,16 @@ class Piece:
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
-        if self.check_and_update_placement(before_piece, board):
-            self.can_move = True
-        else:
+        if not self.check_and_update_placement(before_piece, board):
             self.row += 1
-            self.can_move = False
+
+    def can_move_down(self, board):
+        before_piece = copy.deepcopy(self)
+        self.row -= 1
+
+        can_move_val = self.check_and_update_placement(before_piece, board, False)
+        self.row += 1
+        return can_move_val
 
     # direction is 1 (right) or -1 (left)
     def move_sideways(self, direction, board):

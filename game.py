@@ -1,8 +1,6 @@
 import pygame
 from piece import Piece
 from board import Board
-import os
-import sys
 
 cell_size = 40
 TOTAL_ROWS = 20
@@ -18,6 +16,9 @@ NEXT_PIECE_Y = 1065
 
 SHIFT_DELAY = 16  # Initial delay before repeating the sideways move
 SHIFT_INTERVAL = 6  # Interval between repeated sideways moves
+
+PIECE_LAND_DELAY = 30
+CLEARED_LINES_DELAY = 64
 
 RIGHT = 1
 LEFT = -1
@@ -92,7 +93,7 @@ class Game:
 
     def run(self):
         self.clock.tick(FPS)
-        if not self.curr_piece.can_move and self.lock_delay > frames[self.board.frames_index]:
+        if not self.curr_piece.can_move_down(self.board) and self.lock_delay > frames[self.board.frames_index]:
             self.piece_landed()
         else:
             self.lock_delay += 1
@@ -119,8 +120,9 @@ class Game:
         else:
             self.cleared_lines = False
             timer = 0
-            while timer < 20:
+            while timer < PIECE_LAND_DELAY:
                 timer += self.clock.tick()
+
         self.board.score += self.board.calculate_points(lines_cleared)
 
         self.display_score()
@@ -145,10 +147,10 @@ class Game:
             if self.cleared_lines:
                 self.delay = 20
 
-        if self.fall_time >= frames[self.board.frames_index] + self.delay and self.curr_piece.can_move: 
+        if self.fall_time >= frames[self.board.frames_index] + self.delay and self.curr_piece.can_move_down(self.board): 
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
-            if not self.curr_piece.can_move:
+            if not self.curr_piece.can_move_down(self.board):
                 self.lock_delay = 0
             self.curr_piece.spawn_delay = False
             self.delay = 0
@@ -160,11 +162,9 @@ class Game:
             if self.is_left_pressed:
                 if self.curr_piece.move_sideways(LEFT, self.board):
                     self.current_shift_interval = SHIFT_INTERVAL
-                    self.curr_piece.can_move = True
             elif self.is_right_pressed:
                 if self.curr_piece.move_sideways(RIGHT, self.board):
                     self.current_shift_interval = SHIFT_INTERVAL
-                    self.curr_piece.can_move = True
         elif self.current_shift_interval > 0:
             self.current_shift_interval -= 1
     
@@ -178,7 +178,6 @@ class Game:
                 if event.key == LEFT_KEY:
                     if self.curr_piece.move_sideways(LEFT, self.board):
                         self.current_shift_delay = SHIFT_DELAY
-                        self.curr_piece.can_move = True
                         self.lock_delay = 0
                     else:
                         self.current_shift_delay = 0
@@ -187,7 +186,6 @@ class Game:
                 elif event.key == RIGHT_KEY:
                     if self.curr_piece.move_sideways(RIGHT, self.board):
                         self.current_shift_delay = SHIFT_DELAY
-                        self.curr_piece.can_move = True
                         self.lock_delay = 0
                     else:
                         self.current_shift_delay = 0
@@ -253,8 +251,9 @@ class Game:
                 pygame.draw.rect(self.screen, color, (lx, y, cell_size, cell_size))
                 pygame.draw.rect(self.screen, color, (rx, y, cell_size, cell_size))
             pygame.display.update()
+
             timer = 0
-            while timer < 64:
+            while timer < CLEARED_LINES_DELAY:
                 timer += self.clock.tick()
     
     def draw_border(self):
