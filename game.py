@@ -93,12 +93,12 @@ class Game:
         self.cleared_lines = False
 
     def run(self):
+        self.clock.tick(FPS)
+        
         pygame.display.update()
         self.draw_board()
         self.draw_border()
         self.display_high_score()
-
-        self.clock.tick(FPS)
 
         self.key_presses()
         self.handle_das()
