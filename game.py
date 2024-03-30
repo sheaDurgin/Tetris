@@ -211,7 +211,7 @@ class Game:
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
     
     def display_high_score(self):
-        self.display_text(f"High Score", 1.15, 150)
+        self.display_text(f"High Score", 1.15, 125)
         self.display_text(f"{self.high_score}", 1.15, 185)
 
     def display_score(self):
