@@ -93,7 +93,7 @@ class Game:
 
     def run(self):
         self.clock.tick(FPS)
-        if not self.curr_piece.can_move_down(self.board) and self.lock_delay > frames[self.board.frames_index]:
+        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= frames[self.board.frames_index]:
             self.piece_landed()
         else:
             self.lock_delay += 1
