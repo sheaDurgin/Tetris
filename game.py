@@ -36,20 +36,12 @@ offsets = {
     12: (-2, -2), 13: (-1, -2), 14: (0, -2), 15: (1, -2),
 }
 
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
 class Game:
     def __init__(self, high_score, starting_level):
         self.high_score = high_score
         self.done = False
         pygame.init()
-        #self.font = pygame.font.Font(resource_path("ShortBaby-Mg2w.ttf"), 36)
+
         self.font = pygame.font.SysFont("comicsans", 36)
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.screen.fill("black")
