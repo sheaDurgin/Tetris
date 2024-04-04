@@ -89,21 +89,12 @@ class Piece:
         # binary represenation of current piece orientation
         self.orientation = self.orientations[self.orientations_index]
         self.spawn_delay = True
-
-    def can_move_down(self, board):
-        before_piece = copy.deepcopy(self)
-        self.row -= 1
-        val = True
-        if not self.check_and_update_placement(before_piece, board, False):
-            val = False
-        self.row += 1
-        return val
         
-    def move_down(self, board):
+    def move_down(self, board, update=True):
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
-        if not self.check_and_update_placement(before_piece, board):
+        if not update or not self.check_and_update_placement(before_piece, board):
             self.row += 1
 
     def can_move_down(self, board):
@@ -115,23 +106,23 @@ class Piece:
         return can_move_val
 
     # direction is 1 (right) or -1 (left)
-    def move_sideways(self, direction, board):
+    def move_sideways(self, direction, board, update):
         before_piece = copy.deepcopy(self)
         self.col += direction
-        if not self.check_and_update_placement(before_piece, board):
+        if not update or not self.check_and_update_placement(before_piece, board):
             self.col -= direction
             return False
         return True
     
     # direction is 1 (clockwise) or -1 (counter clockwise)
-    def rotate(self, direction, board):
+    def rotate(self, direction, board, update):
         before_piece = copy.deepcopy(self)
         original_orientation = self.orientations_index
         
         self.orientations_index = (self.orientations_index + direction) % len(self.orientations)
         self.orientation = self.orientations[self.orientations_index]
         
-        if not self.check_and_update_placement(before_piece, board):
+        if not update or not self.check_and_update_placement(before_piece, board):
             self.orientations_index = original_orientation
             self.orientation = self.orientations[self.orientations_index]
 
