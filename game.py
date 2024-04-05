@@ -94,7 +94,7 @@ class Game:
         self.first_piece_delay = pygame.time.get_ticks()
 
     def run(self):
-        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 3:
+        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 2:
             self.piece_landed()
         else:
             self.lock_delay += 1
@@ -107,11 +107,11 @@ class Game:
 
         self.fall()
         self.fall_time += 1
-        pygame.display.update()
 
         if self.speedup:
             self.fall_time += 1
         self.clock.tick(FPS)
+        pygame.display.update()
 
     def piece_landed(self):
         lines_cleared, rows_cleared = self.board.clear_lines()
@@ -124,7 +124,7 @@ class Game:
             self.curr_piece.lowest_row -= 4
         if lines_cleared > 0:
             self.cleared_lines = True
-            delay += cnt
+            delay += cnt + 17
             self.display_line_clear_animation(rows_cleared, delay)
         else:
             self.cleared_lines = False
@@ -249,8 +249,9 @@ class Game:
                 y = self.top_left_y + (TOTAL_ROWS - row - 1) * cell_size
                 pygame.draw.rect(self.screen, color, (lx, y, cell_size, cell_size))
                 pygame.draw.rect(self.screen, color, (rx, y, cell_size, cell_size))
-            pygame.display.update()
 
+            pygame.display.update()
+            
             end_time = pygame.time.get_ticks() + delay
             while pygame.time.get_ticks() < end_time:
                 self.key_presses(False)
