@@ -89,28 +89,16 @@ class Game:
 
         self.speedup = False
 
-        self.lock_delay = 0
         self.cleared_lines = False
         self.first_piece_delay = pygame.time.get_ticks()
 
-    def run(self):
-        pygame.display.update()
-        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 3:
-            self.piece_landed()
-        else:
-            self.lock_delay += 1
-        
-        self.draw_board()
-        self.draw_border()
-        self.display_high_score()
+    def run(self):        
+        self.draw_for_run()
 
         self.key_presses()
-
+        
         self.fall()
-        self.fall_time += 1
-
-        if self.speedup:
-            self.fall_time += 1
+        
         self.clock.tick(FPS)
 
     def piece_landed(self):
@@ -149,25 +137,33 @@ class Game:
         self.display_next_piece(self.next_piece)
     
     def fall(self):
-        if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay and self.curr_piece.can_move_down(self.board): 
-            self.curr_piece.delay = 0
-            self.fall_time = 0
-            self.curr_piece.move_down(self.board)
-            if not self.curr_piece.can_move_down(self.board):
-                self.lock_delay = 0
-            self.curr_piece.spawn_delay = False
+        if self.speedup:
+            self.fall_time += 1
+        if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay: 
+            if self.curr_piece.can_move_down(self.board):
+                self.curr_piece.delay = 0
+                self.fall_time = 0
+                self.curr_piece.move_down(self.board)
+            else:
+                self.piece_landed()
+        self.fall_time += 1
+        pygame.display.update()
+    
+    def draw_for_run(self):
+        self.draw_board()
+        self.draw_border()
+        self.display_high_score()
+        pygame.display.update()
 
     def sideways(self, key, dir, update):
         if key in KEY_DELAYS:
             curr_time = pygame.time.get_ticks()
             if curr_time >= KEY_DELAYS[key]:
                 if self.curr_piece.move_sideways(dir, self.board, update):
-                    self.lock_delay = 0
                     KEY_DELAYS[key] = curr_time + SHIFT_INTERVAL
         else:
             curr_time = pygame.time.get_ticks()
             if self.curr_piece.move_sideways(dir, self.board, update):
-                self.lock_delay = 0
                 KEY_DELAYS[key] = curr_time + SHIFT_DELAY
             else: 
                 KEY_DELAYS[key] = curr_time
@@ -182,7 +178,6 @@ class Game:
 
         elif keys[DOWN_KEY]:
             self.speedup = True
-            self.curr_piece.move_down(self.board, update)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -204,6 +199,8 @@ class Game:
                     KEY_DELAYS.pop(RIGHT_KEY, None)
                 elif event.key == DOWN_KEY:
                     self.speedup = False
+        
+        pygame.display.update()
 
         while self.pause:
             for event in pygame.event.get():
