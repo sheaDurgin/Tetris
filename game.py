@@ -17,11 +17,6 @@ NEXT_PIECE_Y = 1065
 SHIFT_DELAY = int(16 * 16.67)  # Initial delay before repeating the sideways move
 SHIFT_INTERVAL = int(6 * 16.67)   # Interval between repeated sideways moves
 
-# PIECE_LAND_DELAY = int(9 * 16.67)
-# CLEARED_LINES_DELAY = int(19 * 16.67) / 5
-# PIECE_LAND_DELAY = 
-# CLEARED_LINES_DELAY = PIECE_L
-
 RIGHT = 1
 LEFT = -1
 CLOCKWISE = 1
@@ -78,6 +73,7 @@ class Game:
 
         self.curr_piece = Piece(-1)
         self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
+        self.curr_piece.delay = 60
         self.next_piece = Piece(self.curr_piece.letter_index)
         self.display_next_piece(self.next_piece)
 
@@ -93,9 +89,9 @@ class Game:
 
         self.speedup = False
 
-        self.delay = 60
         self.lock_delay = 0
         self.cleared_lines = False
+        self.first_piece_delay = pygame.time.get_ticks()
 
     def run(self):
         if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 3:
@@ -132,10 +128,9 @@ class Game:
             self.display_line_clear_animation(rows_cleared, delay)
         else:
             self.cleared_lines = False
-            timer = 0
-            while timer < delay * 16.67:
+            end_time = pygame.time.get_ticks() + delay * 16.67
+            while pygame.time.get_ticks() < end_time:
                 self.key_presses(False)
-                timer += self.clock.tick()
 
         self.board.score += self.board.calculate_points(lines_cleared)
 
@@ -156,18 +151,13 @@ class Game:
         self.display_next_piece(self.next_piece)
     
     def fall(self):
-        if self.delay == 0 and self.curr_piece.spawn_delay:
-            self.delay = 10
-            if self.cleared_lines:
-                self.delay = 20
-
-        if self.fall_time >= frames[self.board.frames_index] + self.delay and self.curr_piece.can_move_down(self.board): 
+        if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay and self.curr_piece.can_move_down(self.board): 
+            self.curr_piece.delay = 0
             self.fall_time = 0
             self.curr_piece.move_down(self.board)
             if not self.curr_piece.can_move_down(self.board):
                 self.lock_delay = 0
             self.curr_piece.spawn_delay = False
-            self.delay = 0
     
     def key_presses(self, update=True):
         keys = pygame.key.get_pressed()
@@ -261,10 +251,9 @@ class Game:
                 pygame.draw.rect(self.screen, color, (rx, y, cell_size, cell_size))
             pygame.display.update()
 
-            timer = 0
-            while timer < delay:
+            end_time = pygame.time.get_ticks() + delay
+            while pygame.time.get_ticks() < end_time:
                 self.key_presses(False)
-                timer += self.clock.tick()
     
     def draw_border(self):
         # Define the border rectangle
@@ -317,21 +306,21 @@ class Game:
         background_color = (0, 0, 0)
 
         key_delay = 125  # Delay in milliseconds between key presses
-        key_timer = 0
+        key_timer = pygame.time.get_ticks()
+        key_delay = key_timer + 100
 
         while True:
             keys = pygame.key.get_pressed()
 
-            key_timer += self.clock.tick()
+            key_timer = pygame.time.get_ticks()
 
             if key_timer >= key_delay:
+                key_timer = pygame.time.get_ticks()
+                key_delay = key_timer + 100
                 if keys[LEFT_KEY]:
                     selected_level = (selected_level - 1) % levels
-                    key_timer = 0  # Reset the key timer
-
-                if keys[RIGHT_KEY]:
+                elif keys[RIGHT_KEY]:
                     selected_level = (selected_level + 1) % levels
-                    key_timer = 0  # Reset the key timer
 
             if keys[pygame.K_RETURN]:
                 return selected_level

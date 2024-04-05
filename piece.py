@@ -81,6 +81,7 @@ class Piece:
         self.col = START_COL
         self.row = START_ROW
         self.lowest_row = self.row
+        self.delay = 0
         self.letter, self.letter_index = get_new_letter(prev_piece_index)
         self.color = colors[self.letter]
         # list of binary represenations
