@@ -94,7 +94,8 @@ class Game:
         self.first_piece_delay = pygame.time.get_ticks()
 
     def run(self):
-        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 2:
+        pygame.display.update()
+        if not self.curr_piece.can_move_down(self.board) and self.lock_delay >= 3:
             self.piece_landed()
         else:
             self.lock_delay += 1
@@ -111,7 +112,6 @@ class Game:
         if self.speedup:
             self.fall_time += 1
         self.clock.tick(FPS)
-        pygame.display.update()
 
     def piece_landed(self):
         lines_cleared, rows_cleared = self.board.clear_lines()
@@ -128,9 +128,7 @@ class Game:
             self.display_line_clear_animation(rows_cleared, delay)
         else:
             self.cleared_lines = False
-            end_time = pygame.time.get_ticks() + delay * 16.67
-            while pygame.time.get_ticks() < end_time:
-                self.key_presses(False)
+            self.delay_after_landing(delay * 16.67)
 
         self.board.score += self.board.calculate_points(lines_cleared)
 
@@ -158,38 +156,29 @@ class Game:
             if not self.curr_piece.can_move_down(self.board):
                 self.lock_delay = 0
             self.curr_piece.spawn_delay = False
+
+    def sideways(self, key, dir, update):
+        if key in KEY_DELAYS:
+            curr_time = pygame.time.get_ticks()
+            if curr_time >= KEY_DELAYS[key]:
+                if self.curr_piece.move_sideways(dir, self.board, update):
+                    self.lock_delay = 0
+                    KEY_DELAYS[key] = curr_time + SHIFT_INTERVAL
+        else:
+            curr_time = pygame.time.get_ticks()
+            if self.curr_piece.move_sideways(dir, self.board, update):
+                self.lock_delay = 0
+                KEY_DELAYS[key] = curr_time + SHIFT_DELAY
+            else: 
+                KEY_DELAYS[key] = curr_time
     
     def key_presses(self, update=True):
         keys = pygame.key.get_pressed()
         if keys[LEFT_KEY] and RIGHT_KEY not in KEY_DELAYS:
-            if LEFT_KEY in KEY_DELAYS:
-                curr_time = pygame.time.get_ticks()
-                if curr_time >= KEY_DELAYS[LEFT_KEY]:
-                    if self.curr_piece.move_sideways(LEFT, self.board, update):
-                        self.lock_delay = 0
-                        KEY_DELAYS[LEFT_KEY] = curr_time + SHIFT_INTERVAL
-            else:
-                curr_time = pygame.time.get_ticks()
-                if self.curr_piece.move_sideways(LEFT, self.board, update):
-                    self.lock_delay = 0
-                    KEY_DELAYS[LEFT_KEY] = curr_time + SHIFT_DELAY
-                else: 
-                    KEY_DELAYS[LEFT_KEY] = curr_time
+            self.sideways(LEFT_KEY, LEFT, update)
                 
         elif keys[RIGHT_KEY] and LEFT_KEY not in KEY_DELAYS:
-            if RIGHT_KEY in KEY_DELAYS:
-                curr_time = pygame.time.get_ticks()
-                if curr_time >= KEY_DELAYS[RIGHT_KEY]:
-                    if self.curr_piece.move_sideways(RIGHT, self.board, update):
-                        self.lock_delay = 0
-                        KEY_DELAYS[RIGHT_KEY] = curr_time + SHIFT_INTERVAL
-            else:
-                curr_time = pygame.time.get_ticks()
-                if self.curr_piece.move_sideways(RIGHT, self.board, update):
-                    self.lock_delay = 0  
-                    KEY_DELAYS[RIGHT_KEY] = curr_time + SHIFT_DELAY
-                else:
-                    KEY_DELAYS[RIGHT_KEY] = curr_time
+            self.sideways(RIGHT_KEY, RIGHT, update)
 
         elif keys[DOWN_KEY]:
             self.speedup = True
@@ -237,9 +226,15 @@ class Game:
                 color = self.board.blocks[(col, row)]
                 pygame.draw.rect(self.screen, color, (x, y, cell_size, cell_size))
 
+    def delay_after_landing(self, delay):
+        end_time = pygame.time.get_ticks() + delay
+        while pygame.time.get_ticks() < end_time:
+            self.key_presses(False)
+        pygame.display.update()
+
     def display_line_clear_animation(self, rows_cleared, delay):
         color = (0, 0, 0)
-        delay *= 16.67/5
+        delay *= 16.67/6
         for col_tuple in col_tuples:
             lx = self.top_left_x + col_tuple[0] * cell_size
             rx = self.top_left_x + col_tuple[1] * cell_size
@@ -250,17 +245,12 @@ class Game:
                 pygame.draw.rect(self.screen, color, (lx, y, cell_size, cell_size))
                 pygame.draw.rect(self.screen, color, (rx, y, cell_size, cell_size))
 
-            pygame.display.update()
-            
-            end_time = pygame.time.get_ticks() + delay
-            while pygame.time.get_ticks() < end_time:
-                self.key_presses(False)
+            self.delay_after_landing(delay)
+
+        self.delay_after_landing(delay)    
     
     def draw_border(self):
-        # Define the border rectangle
         border_rect = pygame.Rect(self.top_left_x, self.top_left_y, (TOTAL_COLS * cell_size), (TOTAL_ROWS * cell_size))
-
-        # Draw the border rectangle
         pygame.draw.rect(self.screen, (255, 255, 255), border_rect, 1)
     
     def display_high_score(self):
@@ -286,10 +276,8 @@ class Game:
         self.display_text(f"Level: {self.board.level}", 2)
 
     def display_next_piece(self, piece):
-        # Clear the area where the next piece will be displayed
         pygame.draw.rect(self.screen, (0, 0, 0), (NEXT_PIECE_X + 110, NEXT_PIECE_Y - 665, 200, 100))
         
-        # Draw the next piece
         for idx, block in enumerate(piece.orientation):
             if block == '1':
                 col_offset, row_offset = offsets[idx]
@@ -306,7 +294,6 @@ class Game:
         text_color = (255, 255, 255)
         background_color = (0, 0, 0)
 
-        key_delay = 125  # Delay in milliseconds between key presses
         key_timer = pygame.time.get_ticks()
         key_delay = key_timer + 100
 
@@ -326,10 +313,8 @@ class Game:
             if keys[pygame.K_RETURN]:
                 return selected_level
 
-            # Clear the screen
             self.screen.fill(background_color)
 
-            # Display the selected level
             text = self.font.render(f"Selected Level: {selected_level}", True, text_color)
             text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
             self.screen.blit(text, text_rect)
