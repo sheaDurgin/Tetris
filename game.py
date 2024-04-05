@@ -17,8 +17,10 @@ NEXT_PIECE_Y = 1065
 SHIFT_DELAY = int(16 * 16.67)  # Initial delay before repeating the sideways move
 SHIFT_INTERVAL = int(6 * 16.67)   # Interval between repeated sideways moves
 
-PIECE_LAND_DELAY = 30
-CLEARED_LINES_DELAY = 64
+# PIECE_LAND_DELAY = int(9 * 16.67)
+# CLEARED_LINES_DELAY = int(19 * 16.67) / 5
+# PIECE_LAND_DELAY = 
+# CLEARED_LINES_DELAY = PIECE_L
 
 RIGHT = 1
 LEFT = -1
@@ -117,13 +119,21 @@ class Game:
 
     def piece_landed(self):
         lines_cleared, rows_cleared = self.board.clear_lines()
+        self.curr_piece.get_lowest_row()
+        delay = 10
+        cnt = 0
+        while self.curr_piece.lowest_row > 1:
+            cnt += 1
+            delay += 2
+            self.curr_piece.lowest_row -= 4
         if lines_cleared > 0:
             self.cleared_lines = True
-            self.display_line_clear_animation(rows_cleared)
+            delay += cnt
+            self.display_line_clear_animation(rows_cleared, delay)
         else:
             self.cleared_lines = False
             timer = 0
-            while timer < PIECE_LAND_DELAY:
+            while timer < delay * 16.67:
                 self.key_presses(False)
                 timer += self.clock.tick()
 
@@ -237,8 +247,9 @@ class Game:
                 color = self.board.blocks[(col, row)]
                 pygame.draw.rect(self.screen, color, (x, y, cell_size, cell_size))
 
-    def display_line_clear_animation(self, rows_cleared):
+    def display_line_clear_animation(self, rows_cleared, delay):
         color = (0, 0, 0)
+        delay *= 16.67/5
         for col_tuple in col_tuples:
             lx = self.top_left_x + col_tuple[0] * cell_size
             rx = self.top_left_x + col_tuple[1] * cell_size
@@ -251,7 +262,7 @@ class Game:
             pygame.display.update()
 
             timer = 0
-            while timer < CLEARED_LINES_DELAY:
+            while timer < delay:
                 self.key_presses(False)
                 timer += self.clock.tick()
     
@@ -294,6 +305,8 @@ class Game:
                 col_offset, row_offset = offsets[idx]
                 spot = (piece.col + col_offset, piece.row + row_offset)
                 pygame.draw.rect(self.screen, piece.color, (NEXT_PIECE_X + spot[0] * cell_size, NEXT_PIECE_Y + 75 - (spot[1] * cell_size), cell_size, cell_size))
+
+        pygame.display.update()
 
     def select_level(self, starting_level):
         pygame.display.set_caption("Select Level")

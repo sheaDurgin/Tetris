@@ -80,6 +80,7 @@ class Piece:
     def __init__(self, prev_piece_index):
         self.col = START_COL
         self.row = START_ROW
+        self.lowest_row = self.row
         self.letter, self.letter_index = get_new_letter(prev_piece_index)
         self.color = colors[self.letter]
         # list of binary represenations
@@ -89,6 +90,14 @@ class Piece:
         # binary represenation of current piece orientation
         self.orientation = self.orientations[self.orientations_index]
         self.spawn_delay = True
+        self.get_lowest_row()
+    
+    def get_lowest_row(self):
+        for idx, block in enumerate(self.orientation):
+            if block == '1':
+                col_offset, row_offset = offsets[idx]
+                spot = (self.col + col_offset, self.row + row_offset)
+                self.lowest_row = min(spot[1], self.lowest_row)
         
     def move_down(self, board, update=True):
         before_piece = copy.deepcopy(self)
