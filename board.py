@@ -43,7 +43,6 @@ class Board:
 
             rows_cleared[row] = clear
         
-        # Move lines down
         offset = 0
         for row in range(TOTAL_ROWS):
             if rows_cleared[row]:

@@ -68,16 +68,13 @@ class Game:
 
         self.pause = False
 
-        self.can_move_left = False
-        self.can_move_right = False
-
         self.curr_piece = Piece(-1)
         self.curr_piece.update_placement(self.curr_piece, self.curr_piece.color, self.board)
         self.curr_piece.delay = 60
         self.next_piece = Piece(self.curr_piece.letter_index)
         self.display_next_piece(self.next_piece)
 
-        self.fall_time = 0
+        self.fall_time = 1
 
         self.draw_border()
         self.display_score()
@@ -87,20 +84,83 @@ class Game:
         self.current_shift_delay = 0
         self.current_shift_interval = 0
 
-        self.speedup = False
+        self.speedup = 0
 
         self.cleared_lines = False
         self.first_piece_delay = pygame.time.get_ticks()
 
     def run(self):        
         self.draw_for_run()
-
-        self.key_presses()
         
         self.fall()
         
+        self.key_presses()
+        
         self.clock.tick(FPS)
+    
+    def fall(self):   
+        if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay: 
+            if self.curr_piece.move_down(self.board):
+                self.curr_piece.delay = 0
+            else:
+                self.piece_landed()
+            self.fall_time = 1
+        else:
+            self.fall_time += 1 + self.speedup
 
+        pygame.display.update()
+
+    def sideways(self, key, dir, update):
+        curr_time = pygame.time.get_ticks()
+        if key in KEY_DELAYS:
+            if curr_time >= KEY_DELAYS[key]:
+                if self.curr_piece.move_sideways(dir, self.board, update):
+                    KEY_DELAYS[key] = curr_time + SHIFT_INTERVAL
+        else:
+            if self.curr_piece.move_sideways(dir, self.board, update):
+                KEY_DELAYS[key] = curr_time + SHIFT_DELAY
+            else: 
+                KEY_DELAYS[key] = curr_time
+    
+    def key_presses(self, update=True):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.done = True
+                pygame.quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == ROTATE_CLOCKWISE_KEY:
+                    self.curr_piece.rotate(CLOCKWISE, self.board, update)
+                elif event.key == ROTATE_COUNTER_CLOCKWISE_KEY:
+                    self.curr_piece.rotate(COUNTER_CLOCKWISE, self.board, update)
+                elif event.key == PAUSE_KEY:
+                    self.pause = True
+            
+            if event.type == pygame.KEYUP:
+                if event.key == LEFT_KEY:
+                    KEY_DELAYS.pop(LEFT_KEY, None)
+                elif event.key == RIGHT_KEY:
+                    KEY_DELAYS.pop(RIGHT_KEY, None)
+                elif event.key == DOWN_KEY:
+                    self.speedup = 0
+        
+        pygame.display.update()
+
+        keys = pygame.key.get_pressed()
+        if keys[LEFT_KEY] and RIGHT_KEY not in KEY_DELAYS:
+            self.sideways(LEFT_KEY, LEFT, update)                
+        elif keys[RIGHT_KEY] and LEFT_KEY not in KEY_DELAYS:
+            self.sideways(RIGHT_KEY, RIGHT, update)
+        elif keys[DOWN_KEY]:
+            self.speedup = 1
+
+        pygame.display.update()
+
+        while self.pause:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == PAUSE_KEY:
+                    self.pause = False
+    
     def piece_landed(self):
         pygame.display.update()
         lines_cleared, rows_cleared = self.board.clear_lines()
@@ -126,7 +186,7 @@ class Game:
         self.display_level()
         pygame.display.update()
 
-        self.speedup = False
+        self.speedup = 0
         self.curr_piece = self.next_piece
         
         if self.check_loss():
@@ -136,102 +196,6 @@ class Game:
         self.next_piece = Piece(self.curr_piece.letter_index)
 
         self.display_next_piece(self.next_piece)
-    
-    def fall(self):
-        inc_fall_time = True
-        
-        if self.speedup:
-            self.fall_time += 1
-
-        if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay: 
-            if self.curr_piece.can_move_down(self.board):
-                self.curr_piece.delay = 0
-                self.fall_time = 0
-                self.curr_piece.move_down(self.board)
-            else:
-                inc_fall_time = False
-                self.piece_landed()
-
-        if inc_fall_time:
-            self.fall_time += 1
-
-        pygame.display.update()
-    
-    def draw_for_run(self):
-        self.draw_board()
-        self.draw_border()
-        self.display_high_score()
-        pygame.display.update()
-
-    def sideways(self, key, dir, update):
-        if key in KEY_DELAYS:
-            curr_time = pygame.time.get_ticks()
-            if curr_time >= KEY_DELAYS[key]:
-                if self.curr_piece.move_sideways(dir, self.board, update):
-                    KEY_DELAYS[key] = curr_time + SHIFT_INTERVAL
-        else:
-            curr_time = pygame.time.get_ticks()
-            if self.curr_piece.move_sideways(dir, self.board, update):
-                KEY_DELAYS[key] = curr_time + SHIFT_DELAY
-            else: 
-                KEY_DELAYS[key] = curr_time
-    
-    def key_presses(self, update=True):
-        keys = pygame.key.get_pressed()
-        if keys[LEFT_KEY] and RIGHT_KEY not in KEY_DELAYS:
-            self.sideways(LEFT_KEY, LEFT, update)
-                
-        elif keys[RIGHT_KEY] and LEFT_KEY not in KEY_DELAYS:
-            self.sideways(RIGHT_KEY, RIGHT, update)
-
-        elif keys[DOWN_KEY]:
-            self.speedup = True
-
-        pygame.display.update()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.done = True
-                pygame.quit()
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == ROTATE_CLOCKWISE_KEY:
-                    self.curr_piece.rotate(CLOCKWISE, self.board, update)
-                elif event.key == ROTATE_COUNTER_CLOCKWISE_KEY:
-                    self.curr_piece.rotate(COUNTER_CLOCKWISE, self.board, update)
-                elif event.key == PAUSE_KEY:
-                    self.pause = True
-            
-            if event.type == pygame.KEYUP:
-                if event.key == LEFT_KEY:
-                    KEY_DELAYS.pop(LEFT_KEY, None)
-                elif event.key == RIGHT_KEY:
-                    KEY_DELAYS.pop(RIGHT_KEY, None)
-                elif event.key == DOWN_KEY:
-                    self.speedup = False
-        
-        pygame.display.update()
-
-        while self.pause:
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN and event.key == PAUSE_KEY:
-                    self.pause = False
-
-    def check_loss(self):
-        for idx, block in enumerate(self.curr_piece.orientation):
-            if block == '1':
-                col_offset, row_offset = offsets[idx]
-                spot = (self.curr_piece.col + col_offset, self.curr_piece.row + row_offset)
-                if self.board.blocks[spot] != (0, 0, 0):
-                    return True
-
-    def draw_board(self):
-        for row in range(TOTAL_ROWS):
-            for col in range(TOTAL_COLS):
-                x = self.top_left_x + col * cell_size
-                y = self.top_left_y + (TOTAL_ROWS - row - 1) * cell_size
-                color = self.board.blocks[(col, row)]
-                pygame.draw.rect(self.screen, color, (x, y, cell_size, cell_size))
 
     def delay_after_landing(self, delay):
         end_time = pygame.time.get_ticks() + delay
@@ -254,7 +218,29 @@ class Game:
 
             self.delay_after_landing(delay)
 
-        self.delay_after_landing(delay)    
+        self.delay_after_landing(delay)  
+
+    def check_loss(self):
+        for idx, block in enumerate(self.curr_piece.orientation):
+            if block == '1':
+                col_offset, row_offset = offsets[idx]
+                spot = (self.curr_piece.col + col_offset, self.curr_piece.row + row_offset)
+                if self.board.blocks[spot] != (0, 0, 0):
+                    return True
+                
+    def draw_for_run(self):
+        self.draw_board()
+        self.draw_border()
+        self.display_high_score()
+        pygame.display.update()
+
+    def draw_board(self):
+        for row in range(TOTAL_ROWS):
+            for col in range(TOTAL_COLS):
+                x = self.top_left_x + col * cell_size
+                y = self.top_left_y + (TOTAL_ROWS - row - 1) * cell_size
+                color = self.board.blocks[(col, row)]
+                pygame.draw.rect(self.screen, color, (x, y, cell_size, cell_size))  
     
     def draw_border(self):
         border_rect = pygame.Rect(self.top_left_x, self.top_left_y, (TOTAL_COLS * cell_size), (TOTAL_ROWS * cell_size))

@@ -100,29 +100,26 @@ class Piece:
                 spot = (self.col + col_offset, self.row + row_offset)
                 self.lowest_row = min(spot[1], self.lowest_row)
         
-    def move_down(self, board, update=True):
+    def move_down(self, board):
         before_piece = copy.deepcopy(self)
         self.row -= 1
 
-        if not update or not self.check_and_update_placement(before_piece, board):
-            self.row += 1
-
-    def can_move_down(self, board):
-        before_piece = copy.deepcopy(self)
-        self.row -= 1
-
-        can_move_val = self.check_and_update_placement(before_piece, board, False)
+        if self.check_and_update_placement(before_piece, board):
+            return True
+        
         self.row += 1
-        return can_move_val
+        return False
 
     # direction is 1 (right) or -1 (left)
     def move_sideways(self, direction, board, update):
         before_piece = copy.deepcopy(self)
         self.col += direction
-        if not update or not self.check_and_update_placement(before_piece, board):
-            self.col -= direction
-            return False
-        return True
+
+        if self.check_and_update_placement(before_piece, board, update):
+            return True
+        
+        self.col -= direction
+        return False
     
     # direction is 1 (clockwise) or -1 (counter clockwise)
     def rotate(self, direction, board, update):
@@ -163,8 +160,7 @@ class Piece:
                     continue
                 if board.blocks[spot] != (0, 0, 0) and spot not in seen_spots:
                     return False
-
-        if update:
+        if update:            
             self.update_placement(before_piece, (0, 0, 0), board)
             self.update_placement(self, self.color, board)
 
