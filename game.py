@@ -102,6 +102,7 @@ class Game:
         self.clock.tick(FPS)
 
     def piece_landed(self):
+        pygame.display.update()
         lines_cleared, rows_cleared = self.board.clear_lines()
         self.curr_piece.get_lowest_row()
         delay = 10
@@ -284,7 +285,7 @@ class Game:
         pygame.display.update()
 
     def select_level(self, starting_level):
-        pygame.display.set_caption("Select Level")
+        pygame.display.set_caption("Select Level With Enter Key")
 
         selected_level = starting_level
         levels = 30
