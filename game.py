@@ -187,6 +187,8 @@ class Game:
         elif keys[DOWN_KEY]:
             self.speedup = True
 
+        pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.done = True
