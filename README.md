@@ -3,13 +3,13 @@ python my_nestris.py
 
 selecting level:
     j: decrease
-    l: increase
+    k: increase
     enter: start game
 
 ingame keybinds:
     j: left
-    l: right
-    k: down
+    k: right
+    l: down
     z: rotate counter clockwise
     x: rotate clockwise
     space: pause
