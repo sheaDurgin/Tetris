@@ -138,16 +138,23 @@ class Game:
         self.display_next_piece(self.next_piece)
     
     def fall(self):
+        inc_fall_time = True
+        
         if self.speedup:
             self.fall_time += 1
+
         if self.fall_time >= frames[self.board.frames_index] + self.curr_piece.delay: 
             if self.curr_piece.can_move_down(self.board):
                 self.curr_piece.delay = 0
                 self.fall_time = 0
                 self.curr_piece.move_down(self.board)
             else:
+                inc_fall_time = False
                 self.piece_landed()
-        self.fall_time += 1
+
+        if inc_fall_time:
+            self.fall_time += 1
+
         pygame.display.update()
     
     def draw_for_run(self):
